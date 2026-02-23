@@ -1,0 +1,40 @@
+{
+  "manifest_version": 3,
+  "name": "Zeus Support Macros",
+  "description": "Módulo do Zeus para uso de macros no Interact TJMA",
+  "version": "1.0.1",
+
+  "content_scripts": [
+    {
+      "matches": [
+        "https://interact.tjma.jus.br/*"
+      ],
+      "js": [
+        "inject.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+
+  "host_permissions": [
+    "https://interact.tjma.jus.br/*"
+  ],
+
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "assets/zeus.png"
+      ],
+      "matches": [
+        "https://interact.tjma.jus.br/*"
+      ]
+    }
+  ],
+
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "zeus-support-macros@tjma.jus.br",
+      "strict_min_version": "109.0"
+    }
+  }
+}

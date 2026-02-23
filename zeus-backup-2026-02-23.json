@@ -1,0 +1,72 @@
+[
+  {
+    "id": 2,
+    "title": "Encerramento",
+    "cat": "Encerramento",
+    "text": "Obrigado por entrar em contato com o Central de Atendimento aos Serviços de Informática do TJMA. Tenha um excelente dia!\nEstamos à disposição sempre que precisar. Até logo!",
+    "pinned": true
+  },
+  {
+    "id": 1768477322211,
+    "title": "Sentinela expirado",
+    "cat": "Ativação",
+    "text": "Seu acesso ao Portal Sentinela foi reativado com sucesso.\n\nVocê pode realizar a tentativa de acesso utilizando o mesmo login e senha, pois nenhuma credencial foi alterada — foi realizada apenas a renovação do acesso no sistema.\n\nCaso encontre alguma dificuldade, fico à disposição para ajudar.\n\nPosso auxiliar em algo mais?",
+    "pinned": false
+  },
+  {
+    "id": 1768477448737,
+    "title": "(TeamViewer)",
+    "cat": "REMOTO",
+    "text": "Para que eu possa realizar o acesso remoto, por gentileza, informe o ID e a senha do TeamViewer do seu computador.\n",
+    "pinned": false
+  },
+  {
+    "id": 1768477473849,
+    "title": "Como abrir o TeamViewer",
+    "cat": "REMOTO",
+    "text": "Para abrir o TeamViewer, utilize o atalho CTRL + ALT + F10\n\nCaso prefira, você também pode pesquisar pelo nome TeamViewer na barra de pesquisa do Windows e abrir o programa normalmente.",
+    "pinned": false
+  },
+  {
+    "id": 1768912039476,
+    "title": "Saudação inicial",
+    "cat": "Saudações",
+    "text": "Olá!\nBem-vindo ao nosso serviço de atendimento de informática. Como posso ajudar você hoje?",
+    "pinned": true
+  },
+  {
+    "id": 1769438450688,
+    "title": "Tec Presencial",
+    "cat": "Onsite",
+    "text": "Para que possa encaminhar o atendimento presencial, por favor informe:\n\n• Nome completo\n• Matrícula\n• Telefone para contato\n• Descrição do problema\n• Local do setor (Fórum Sarney Costa, prédio do TJMA, Centro Administrativo – Rua do Egito ou, se for Juizado, informe o bairro)",
+    "pinned": false
+  },
+  {
+    "id": 1769691151520,
+    "title": "Solicitar dados para solicitação. ",
+    "cat": "Dados do servidor",
+    "text": "Me informe por gentileza o seu nome, matrícula e um telefone para contato.",
+    "pinned": true
+  },
+  {
+    "id": 1770204674843,
+    "title": "PJE",
+    "cat": "Instabilidades",
+    "text": "Informamos que o sistema PJe (Processo Judicial Eletrônico) encontra-se temporariamente fora do ar. A equipe técnica já está ciente e trabalhando para restabelecer o acesso o mais breve possível.",
+    "pinned": false
+  },
+  {
+    "id": 1770634979918,
+    "title": "Inclusão de sistema no Sentinela",
+    "cat": "Sentinela",
+    "text": "O sistema solicitado já foi devidamente integrado ao Portal Sentinela.\n\nPara acessá-lo, por gentileza, saia do Portal e realize um novo login, garantindo o carregamento correto do sistema.\n\n🔗 Acesso ao Portal Sentinela:\nhttps://sistemas.tjma.jus.br/sentinela/\n\nPermanecemos à disposição para quaisquer esclarecimentos adicionais.",
+    "pinned": true
+  },
+  {
+    "id": 1770992068911,
+    "title": "Anydesk",
+    "cat": "REMOTO ",
+    "text": "\nCaso você esteja em casa, pode informar o ID do dispositivo do aplicativo AnyDesk, que pode ser baixado no link abaixo:\nhttps://anydesk.com/pt/downloads/windows\n\nFico no aguardo das informações para dar continuidade ao atendimento.",
+    "pinned": false
+  }
+]
