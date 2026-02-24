@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Zeus Support Macros",
   "description": "Módulo do Zeus para uso de macros no Interact TJMA",
-  "version": "1.0.1",
+  "version": "1.1.0",
 
   "content_scripts": [
     {
