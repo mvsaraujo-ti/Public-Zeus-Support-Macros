@@ -1,8 +1,24 @@
 {
   "manifest_version": 3,
   "name": "Zeus Support Macros",
-  "description": "Módulo do Zeus para uso de macros no Interact TJMA",
-  "version": "1.1.0",
+  "description": "Internal productivity extension for managing and inserting standardized support macros in Interact TJMA.",
+  "version": "1.1.1",
+
+  "icons": {
+    "16": "assets/icon-16.png",
+    "32": "assets/icon-32.png",
+    "48": "assets/icon-48.png",
+    "128": "assets/icon-128.png"
+  },
+
+  "action": {
+    "default_icon": {
+      "16": "assets/icon-16.png",
+      "32": "assets/icon-32.png",
+      "48": "assets/icon-48.png"
+    },
+    "default_title": "Zeus Support Macros"
+  },
 
   "content_scripts": [
     {
@@ -23,7 +39,8 @@
   "web_accessible_resources": [
     {
       "resources": [
-        "assets/zeus.png"
+        "assets/zeus.png",
+        "assets/default-macros.json"
       ],
       "matches": [
         "https://interact.tjma.jus.br/*"
