@@ -1,30 +1,50 @@
 # Privacy Policy – Zeus Support Macros
 
-Zeus Support Macros is an internal productivity browser extension developed for use within the Interact TJMA system.
+Last updated: 27 February 2026
 
-## Data Collection
+Zeus Support Macros is a browser extension developed to improve productivity within the Interact TJMA system.
 
-This extension does NOT collect, transmit, store, or process any personal data externally.
+## 1. Data Collection
 
-All user-created macros are stored locally in the browser using the official extension storage API.
+Zeus Support Macros does NOT collect, transmit, process, or store personal data externally.
 
-No data is sent to external servers.
-No analytics or tracking technologies are used.
-No third-party services are integrated.
+The extension does not gather:
+- Personal information
+- Authentication credentials
+- Browsing history
+- Analytics data
+- Tracking information
 
-## Permissions
+## 2. Local Data Storage
 
-The extension operates only on the following domain:
+All macros created by users are stored locally on the user's device using the official browser Extension Storage API.
+
+This data:
+- Remains exclusively on the user's device
+- Is not transmitted to any external server
+- Is not accessible by the developer
+- Is not shared with third parties
+
+## 3. Permissions
+
+The extension operates exclusively on the following domain:
+
 https://interact.tjma.jus.br/*
 
-It does not request access to other websites.
+It does not access or interact with other websites.
 
-## Data Security
+## 4. Third-Party Services
 
-All data remains stored locally on the user's device and is not accessible by the developer or any external entity.
+Zeus Support Macros does not integrate with any third-party APIs, analytics services, or external tracking systems.
 
-## Contact
+## 5. Data Security
+
+Since no external data transmission occurs, all information remains confined to the local browser environment.
+
+## 6. Contact Information
 
 Developer: Maxwell Araújo
 Email: maxwellaraujoti@gmail.com
-GitHub: https://github.com/mvsaraujo-ti
+GitHub: https://github.com/mvsaraujo-ti/Public-Zeus-Support-Macros
+
+If you have any questions regarding this Privacy Policy, you may contact the developer using the information above.
