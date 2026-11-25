@@ -217,10 +217,10 @@ function themeCSS(){
 }
 function applyPageTheme(){
  if(!pageThemeStyle){pageThemeStyle=document.getElementById('zeus-page-theme');if(!pageThemeStyle){pageThemeStyle=document.createElement('style');pageThemeStyle.id='zeus-page-theme';(document.head||document.documentElement).append(pageThemeStyle)}}
- pageThemeStyle.textContent=themeCSS();
+ const css=themeCSS();if(pageThemeStyle.textContent!==css)pageThemeStyle.textContent=css;
  if(panel)panel.dataset.theme=theme;
  // O documento do editor GWT fica em iframe same-origin; aplicar sem observar mutations de estilo.
- document.querySelectorAll('iframe').forEach(frame=>{try{const d=frame.contentDocument;if(!d||!d.documentElement)return;let s=d.getElementById('zeus-frame-theme');if(!s){s=d.createElement('style');s.id='zeus-frame-theme';(d.head||d.documentElement).append(s)}s.textContent=themeCSS();if(d.body){d.body.style.background=theme==='dark'?'#252a32':'#e8edf5';d.body.style.color=theme==='dark'?'#d7dce5':'#243247'}}catch(_){}});
+ document.querySelectorAll('iframe').forEach(frame=>{try{const d=frame.contentDocument;if(!d||!d.documentElement)return;let s=d.getElementById('zeus-frame-theme');if(!s){s=d.createElement('style');s.id='zeus-frame-theme';(d.head||d.documentElement).append(s)}const frameCss=themeCSS();if(s.textContent!==frameCss)s.textContent=frameCss;if(d.body){d.body.style.background=theme==='dark'?'#252a32':'#e8edf5';d.body.style.color=theme==='dark'?'#d7dce5':'#243247'}}catch(_){}});
 }
 function initUI(){
  host=document.createElement('div');host.id='zeus-interact-host';host.style.cssText='position:fixed;z-index:2147483647;right:0;bottom:0';
