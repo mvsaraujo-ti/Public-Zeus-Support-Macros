@@ -185,7 +185,6 @@ function bindFrameKeys(){
    const d=f.contentWindow?.document||f.contentDocument;
    if(d&&!d.__zeusKeysBound){
     d.addEventListener('keydown',handleShortcut,true);
-    d.addEventListener('keyup',handleShortcut,true);
     d.__zeusKeysBound=true;
    }
   }catch(_){}
@@ -193,7 +192,7 @@ function bindFrameKeys(){
 }
 async function start(){
  await defaults();if(!document.body)return;initUI();
- document.addEventListener('keydown',handleShortcut,true);window.addEventListener('keydown',handleShortcut,true);document.addEventListener('keyup',handleShortcut,true);
+ document.addEventListener('keydown',handleShortcut,true);window.addEventListener('keydown',handleShortcut,true);
  bindFrameKeys();
  new MutationObserver(bindFrameKeys).observe(document.documentElement,{childList:true,subtree:true});
  console.info('[Zeus] Central Interact v1.1 carregada');
