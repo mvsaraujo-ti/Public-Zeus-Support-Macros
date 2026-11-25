@@ -23,24 +23,38 @@ function notice(msg,type){
  if(!toast)return;toast.textContent=msg;toast.dataset.type=type||'info';toast.classList.add('show');
  clearTimeout(notice.t);notice.t=setTimeout(()=>toast.classList.remove('show'),2500);
 }
+let rememberedEditor=null;
+const savedRanges=new WeakMap();
 function editor(){
- // O Interact usa GWT RichTextArea: o campo editável costuma ser o BODY de um iframe.
- const frames=[...document.querySelectorAll('iframe')];
- for(const f of frames){
+ const candidates=[...document.querySelectorAll('iframe')].map(f=>{
   try{
-   const d=f.contentWindow?.document||f.contentDocument;
-   const b=d?.body;
-   if(!d||!b)continue;
-   const signature=((f.id||'')+' '+(f.className||'')).toLowerCase();
-   const isRich=signature.includes('richtextarea')||signature.includes('richtextarea')||signature.includes('richtext');
-   const editable=d.designMode?.toLowerCase()==='on'||b.isContentEditable||b.contentEditable==='true'||isRich;
-   if(editable)return {kind:'frame',f,d,b};
-  }catch(err){}
+   const d=f.contentDocument||f.contentWindow?.document,b=d?.body;
+   if(!d||!b)return null;
+   const sig=((f.id||'')+' '+(f.className||'')).toLowerCase();
+   const rich=sig.includes('richtextarea')||sig.includes('richtext');
+   const editable=d.designMode?.toLowerCase()==='on'||b.isContentEditable||b.contentEditable==='true'||rich;
+   if(!editable)return null;
+   const rect=f.getBoundingClientRect(),style=getComputedStyle(f);
+   const visible=rect.width>80&&rect.height>25&&style.display!=='none'&&style.visibility!=='hidden';
+   return visible?{kind:'frame',f,d,b,area:rect.width*rect.height}:null;
+  }catch(_){return null}
+ }).filter(Boolean).sort((a,b)=>b.area-a.area);
+ if(candidates.length){
+  const chosen=candidates[0];
+  rememberedEditor=chosen;
+  try{
+   if(!chosen.d.__zeusRangeTracking){
+    chosen.d.addEventListener('selectionchange',()=>{
+     try{const s=chosen.d.getSelection();if(s?.rangeCount&&chosen.b.contains(s.getRangeAt(0).commonAncestorContainer))savedRanges.set(chosen.d,s.getRangeAt(0).cloneRange())}catch(_){}
+    });
+    chosen.d.__zeusRangeTracking=true;
+   }
+  }catch(_){}
+  return chosen;
  }
- // Fallbacks para versões do sistema que renderizam o editor sem iframe.
  const e=document.querySelector('textarea:not([readonly]),[contenteditable="true"],[contenteditable=""],.x-form-field');
  if(e&&(/^(TEXTAREA|INPUT)$/.test(e.tagName)||e.isContentEditable))return {kind:'element',e};
- return null;
+ return rememberedEditor;
 }
 function emitEditorEvents(targets,text){
  for(const target of targets.filter(Boolean)){
@@ -51,66 +65,59 @@ function emitEditorEvents(targets,text){
 }
 function insert(text,title){
  const ed=editor();
- if(!ed){notice('Não localizei o editor do Interact. Clique na caixa de mensagem e tente novamente.','warn');return}
+ if(!ed){notice('Não localizei o editor. Clique uma vez na caixa de mensagem e tente novamente.','warn');return}
  const value=String(text??'');
  try{
   if(ed.kind==='frame'){
    const {f,d,b}=ed;
    f.contentWindow.focus();f.focus();b.focus();
-   const before=b.innerText||b.textContent||'';
-   let done=false;
-   // Tenta inserir no cursor atual, sem substituir o conteúdo já digitado.
+   let inserted=false;
+   const before=b.innerHTML;
+   // Primeiro tenta o mecanismo nativo do editor GWT, preservando a seleção anterior.
    try{
-    d.execCommand('insertText',false,value);
-    done=(b.innerText||b.textContent||'')!==before;
-   }catch(_){}
-   if(!done){
-    const sel=d.getSelection();
-    let range;
-    if(sel&&sel.rangeCount&&b.contains(sel.getRangeAt(0).commonAncestorContainer)){
-     range=sel.getRangeAt(0);
-    }else{
-     range=d.createRange();range.selectNodeContents(b);range.collapse(false);
+    const sel=d.getSelection(),remembered=savedRanges.get(d);
+    if(remembered&&b.contains(remembered.commonAncestorContainer)){sel.removeAllRanges();sel.addRange(remembered)}
+    else if(!sel?.rangeCount||!b.contains(sel.getRangeAt(0).commonAncestorContainer)){
+     const r=d.createRange();r.selectNodeContents(b);r.collapse(false);sel?.removeAllRanges();sel?.addRange(r);
     }
+    inserted=!!d.execCommand('insertText',false,value);
+   }catch(_){}
+   // Fallback determinístico: inserir texto no cursor salvo ou no final do editor.
+   if(!inserted||b.innerHTML===before){
+    const sel=d.getSelection();let range;
+    const remembered=savedRanges.get(d);
+    if(remembered&&b.contains(remembered.commonAncestorContainer))range=remembered.cloneRange();
+    else if(sel?.rangeCount&&b.contains(sel.getRangeAt(0).commonAncestorContainer))range=sel.getRangeAt(0).cloneRange();
+    else{range=d.createRange();range.selectNodeContents(b);range.collapse(false)}
     range.deleteContents();
-    const frag=d.createDocumentFragment();
-    value.split(/\r?\n/).forEach((line,i)=>{
-     if(i)frag.appendChild(d.createElement('br'));
-     if(line)frag.appendChild(d.createTextNode(line));
-    });
-    const marker=d.createComment('zeus-cursor');
-    frag.appendChild(marker);
-    range.insertNode(frag);
-    const after=d.createRange();after.setStartBefore(marker);after.collapse(true);
-    if(sel){sel.removeAllRanges();sel.addRange(after)}
-    marker.remove();
-    done=(b.innerText||b.textContent||'').length>before.length||value.length===0;
+    const fragment=d.createDocumentFragment();
+    value.split(/\r?\n/).forEach((line,i)=>{if(i)fragment.appendChild(d.createElement('br'));if(line)fragment.appendChild(d.createTextNode(line))});
+    const marker=d.createElement('span');marker.setAttribute('data-zeus-cursor','');marker.appendChild(d.createTextNode('\u200b'));fragment.appendChild(marker);
+    range.insertNode(fragment);
+    const caret=d.createRange();caret.setStart(marker.firstChild,1);caret.collapse(true);
+    sel?.removeAllRanges();sel?.addRange(caret);savedRanges.set(d,caret.cloneRange());marker.removeAttribute('data-zeus-cursor');
    }
-   // GWT lê o conteúdo do BODY do iframe; emitir eventos no body e no documento.
+   // GWT sincroniza o RichTextArea por eventos de teclado/input.
    emitEditorEvents([b,d,f.contentWindow],value);
-   try{b.dispatchEvent(new KeyboardEvent('keyup',{bubbles:true,key:' '}))}catch(_){}
-   if(!done){notice('O Interact não confirmou a inserção. O texto não foi enviado.','error');return}
+   ['keyup','input','change'].forEach(type=>{try{b.dispatchEvent(new Event(type,{bubbles:true}))}catch(_){}});
+   try{b.dispatchEvent(new KeyboardEvent('keyup',{bubbles:true,key:' ',code:'Space'}))}catch(_){}
+   if(b.innerHTML===before&&value){notice('O editor não aceitou a inserção. Clique dentro da caixa de mensagem e tente novamente.','error');return}
   }else{
    const e=ed.e;e.focus();
    if(e.tagName==='TEXTAREA'||e.tagName==='INPUT'){
-    const a=e.selectionStart??e.value.length,z=e.selectionEnd??e.value.length;
-    e.setRangeText(value,a,z,'end');
+    const a=e.selectionStart??e.value.length,z=e.selectionEnd??e.value.length;e.setRangeText(value,a,z,'end');
    }else{
     const d=e.ownerDocument,sel=d.getSelection(),r=d.createRange();
     if(sel?.rangeCount&&e.contains(sel.getRangeAt(0).commonAncestorContainer))r.setStart(sel.getRangeAt(0).startContainer,sel.getRangeAt(0).startOffset);
     else{r.selectNodeContents(e);r.collapse(false)}
-    r.deleteContents();const node=d.createTextNode(value);r.insertNode(node);r.setStartAfter(node);r.collapse(true);
-    sel?.removeAllRanges();sel?.addRange(r);
+    r.deleteContents();const node=d.createTextNode(value);r.insertNode(node);r.setStartAfter(node);r.collapse(true);sel?.removeAllRanges();sel?.addRange(r);
    }
    emitEditorEvents([e],value);
   }
   history.unshift({title:title||'Texto inserido',text:value,time:new Date().toISOString()});
   history=history.slice(0,40);write(K.history,history);
   notice('Macro inserida no editor. Revise antes de enviar.','success');
- }catch(err){
-  console.warn('[Zeus] Erro ao inserir macro:',err);
-  notice('Não foi possível inserir a macro. Nada foi enviado.','error');
- }
+ }catch(err){console.warn('[Zeus] Erro ao inserir macro:',err);notice('Não foi possível inserir a macro. Nada foi enviado.','error')}
 }
 function renderMacros(){
  const view=panel.querySelector('#view');
