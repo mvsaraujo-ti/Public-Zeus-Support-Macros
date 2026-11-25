@@ -24,70 +24,93 @@ function notice(msg,type){
  clearTimeout(notice.t);notice.t=setTimeout(()=>toast.classList.remove('show'),2500);
 }
 function editor(){
+ // O Interact usa GWT RichTextArea: o campo editável costuma ser o BODY de um iframe.
  const frames=[...document.querySelectorAll('iframe')];
  for(const f of frames){
   try{
-   const d=f.contentDocument,b=d?.body;
+   const d=f.contentWindow?.document||f.contentDocument;
+   const b=d?.body;
    if(!d||!b)continue;
-   const rich=/RichTextArea|richtextarea/i.test((f.className||'')+' '+(f.id||''));
-   const editable=d.designMode==='on'||b.isContentEditable||b.contentEditable==='true';
-   if(editable&&(rich||b))return {f,d,b};
-  }catch(_){}
+   const signature=((f.id||'')+' '+(f.className||'')).toLowerCase();
+   const isRich=signature.includes('richtextarea')||signature.includes('richtextarea')||signature.includes('richtext');
+   const editable=d.designMode?.toLowerCase()==='on'||b.isContentEditable||b.contentEditable==='true'||isRich;
+   if(editable)return {kind:'frame',f,d,b};
+  }catch(err){}
  }
- const e=document.querySelector('textarea:not([readonly]),[contenteditable="true"]');
- return e?{e}:null;
+ // Fallbacks para versões do sistema que renderizam o editor sem iframe.
+ const e=document.querySelector('textarea:not([readonly]),[contenteditable="true"],[contenteditable=""],.x-form-field');
+ if(e&&(/^(TEXTAREA|INPUT)$/.test(e.tagName)||e.isContentEditable))return {kind:'element',e};
+ return null;
 }
-function fireEditorEvents(d,b,text){
- try{b.dispatchEvent(new InputEvent('input',{bubbles:true,inputType:'insertText',data:text}))}catch(_){b.dispatchEvent(new Event('input',{bubbles:true}))}
- try{d.dispatchEvent(new Event('input',{bubbles:true}))}catch(_){}
- try{b.dispatchEvent(new Event('change',{bubbles:true}))}catch(_){}
+function emitEditorEvents(targets,text){
+ for(const target of targets.filter(Boolean)){
+  try{target.dispatchEvent(new InputEvent('input',{bubbles:true,composed:true,inputType:'insertText',data:text}))}
+  catch(_){try{target.dispatchEvent(new Event('input',{bubbles:true,composed:true}))}catch(__){}}
+  try{target.dispatchEvent(new Event('change',{bubbles:true,composed:true}))}catch(_){}
+ }
 }
 function insert(text,title){
  const ed=editor();
- if(!ed){notice('Não encontrei o campo de mensagem. Clique dentro da caixa de texto e tente novamente.','warn');return}
+ if(!ed){notice('Não localizei o editor do Interact. Clique na caixa de mensagem e tente novamente.','warn');return}
+ const value=String(text??'');
  try{
-  if(ed.b){
+  if(ed.kind==='frame'){
    const {f,d,b}=ed;
-   f.focus();b.focus();
-   let sel=d.getSelection();
-   if(!sel){notice('O editor não disponibilizou a seleção de texto.','error');return}
-   if(!sel.rangeCount){const r=d.createRange();r.selectNodeContents(b);r.collapse(false);sel.addRange(r)}
-   // Primeiro tenta a API nativa do editor; valida se o texto realmente apareceu.
+   f.contentWindow.focus();f.focus();b.focus();
    const before=b.innerText||b.textContent||'';
-   let inserted=false;
+   let done=false;
+   // Tenta inserir no cursor atual, sem substituir o conteúdo já digitado.
    try{
-    const html=String(text).split(/\r?\n/).map(line=>line?line.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'):'<br>').join('<br>');
-    d.execCommand('insertHTML',false,html);
-    inserted=(b.innerText||b.textContent||'').length>before.length;
+    d.execCommand('insertText',false,value);
+    done=(b.innerText||b.textContent||'')!==before;
    }catch(_){}
-   if(!inserted){
-    sel=d.getSelection();
-    if(!sel.rangeCount){const r=d.createRange();r.selectNodeContents(b);r.collapse(false);sel.addRange(r)}
-    const range=sel.getRangeAt(0);range.deleteContents();
-    const fragment=d.createDocumentFragment();
-    String(text).split(/\r?\n/).forEach((line,i)=>{if(i)fragment.appendChild(d.createElement('br'));fragment.appendChild(d.createTextNode(line))});
-    const last=fragment.lastChild;range.insertNode(fragment);
-    if(last){range.setStartAfter(last);range.collapse(true);sel.removeAllRanges();sel.addRange(range)}
+   if(!done){
+    const sel=d.getSelection();
+    let range;
+    if(sel&&sel.rangeCount&&b.contains(sel.getRangeAt(0).commonAncestorContainer)){
+     range=sel.getRangeAt(0);
+    }else{
+     range=d.createRange();range.selectNodeContents(b);range.collapse(false);
+    }
+    range.deleteContents();
+    const frag=d.createDocumentFragment();
+    value.split(/\r?\n/).forEach((line,i)=>{
+     if(i)frag.appendChild(d.createElement('br'));
+     if(line)frag.appendChild(d.createTextNode(line));
+    });
+    const marker=d.createComment('zeus-cursor');
+    frag.appendChild(marker);
+    range.insertNode(frag);
+    const after=d.createRange();after.setStartBefore(marker);after.collapse(true);
+    if(sel){sel.removeAllRanges();sel.addRange(after)}
+    marker.remove();
+    done=(b.innerText||b.textContent||'').length>before.length||value.length===0;
    }
-   fireEditorEvents(d,b,text);
-   // GWT pode atualizar o estado interno após o próximo ciclo de eventos.
-   setTimeout(()=>{try{fireEditorEvents(d,b,text)}catch(_){}},0);
+   // GWT lê o conteúdo do BODY do iframe; emitir eventos no body e no documento.
+   emitEditorEvents([b,d,f.contentWindow],value);
+   try{b.dispatchEvent(new KeyboardEvent('keyup',{bubbles:true,key:' '}))}catch(_){}
+   if(!done){notice('O Interact não confirmou a inserção. O texto não foi enviado.','error');return}
   }else{
    const e=ed.e;e.focus();
-   if(e.tagName==='TEXTAREA'){
-    const a=e.selectionStart??e.value.length,z=e.selectionEnd??e.value.length;e.setRangeText(text,a,z,'end');
+   if(e.tagName==='TEXTAREA'||e.tagName==='INPUT'){
+    const a=e.selectionStart??e.value.length,z=e.selectionEnd??e.value.length;
+    e.setRangeText(value,a,z,'end');
    }else{
-    const d=e.ownerDocument,sel=d.getSelection(),range=d.createRange();
-    if(sel?.rangeCount)range.setStart(sel.getRangeAt(0).startContainer,sel.getRangeAt(0).startOffset);
-    else{range.selectNodeContents(e);range.collapse(false)}
-    range.collapse(true);range.deleteContents();
-    String(text).split(/\r?\n/).forEach((line,i)=>{if(i)e.appendChild(d.createElement('br'));e.appendChild(d.createTextNode(line))});
+    const d=e.ownerDocument,sel=d.getSelection(),r=d.createRange();
+    if(sel?.rangeCount&&e.contains(sel.getRangeAt(0).commonAncestorContainer))r.setStart(sel.getRangeAt(0).startContainer,sel.getRangeAt(0).startOffset);
+    else{r.selectNodeContents(e);r.collapse(false)}
+    r.deleteContents();const node=d.createTextNode(value);r.insertNode(node);r.setStartAfter(node);r.collapse(true);
+    sel?.removeAllRanges();sel?.addRange(r);
    }
-   e.dispatchEvent(new Event('input',{bubbles:true}));e.dispatchEvent(new Event('change',{bubbles:true}));
+   emitEditorEvents([e],value);
   }
-  history.unshift({title:title||'Texto inserido',text,time:new Date().toISOString()});history=history.slice(0,40);write(K.history,history);
-  notice('Texto inserido. Confira o campo de mensagem antes de enviar.','success');
- }catch(e){console.warn('[Zeus] Falha ao inserir macro:',e);notice('Falha ao inserir. O texto não foi enviado.','error')}
+  history.unshift({title:title||'Texto inserido',text:value,time:new Date().toISOString()});
+  history=history.slice(0,40);write(K.history,history);
+  notice('Macro inserida no editor. Revise antes de enviar.','success');
+ }catch(err){
+  console.warn('[Zeus] Erro ao inserir macro:',err);
+  notice('Não foi possível inserir a macro. Nada foi enviado.','error');
+ }
 }
 function renderMacros(){
  const view=panel.querySelector('#view');
@@ -143,20 +166,34 @@ function initUI(){
  panel.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>{tab=b.dataset.tab;render()}));
  root.append(style,launch,panel,toast);document.body.append(host);
 }
-function keys(e){
+function handleShortcut(e){
  const key=String(e.key||'').toLowerCase();
- if(e.altKey&&(key==='z'||e.code==='KeyZ')){e.preventDefault();e.stopPropagation();toggle()}
- else if(e.ctrlKey&&e.shiftKey&&(key==='m'||e.code==='KeyM')){e.preventDefault();e.stopPropagation();tab='macros';toggle(true);setTimeout(()=>search?.focus(),40)}
- else if(key==='escape'&&opened){e.preventDefault();toggle(false)}
+ const isZ=key==='z'||e.code==='KeyZ'||e.keyCode===90;
+ const isM=key==='m'||e.code==='KeyM'||e.keyCode===77;
+ if(e.altKey&&isZ){
+  e.preventDefault();e.stopPropagation();e.stopImmediatePropagation?.();toggle();
+ }else if(e.ctrlKey&&e.shiftKey&&isM){
+  e.preventDefault();e.stopPropagation();e.stopImmediatePropagation?.();tab='macros';toggle(true);setTimeout(()=>search?.focus(),40);
+ }else if(key==='escape'&&opened){
+  e.preventDefault();toggle(false);
+ }
 }
+function keys(e){handleShortcut(e)}
 function bindFrameKeys(){
  for(const f of document.querySelectorAll('iframe')){
-  try{const d=f.contentDocument;if(d&&!d.__zeusKeysBound){d.addEventListener('keydown',keys,true);d.__zeusKeysBound=true}}catch(_){}
- }
+  try{
+   const d=f.contentWindow?.document||f.contentDocument;
+   if(d&&!d.__zeusKeysBound){
+    d.addEventListener('keydown',handleShortcut,true);
+    d.addEventListener('keyup',handleShortcut,true);
+    d.__zeusKeysBound=true;
+   }
+  }catch(_){}
+ } 
 }
 async function start(){
  await defaults();if(!document.body)return;initUI();
- document.addEventListener('keydown',keys,true);window.addEventListener('keydown',keys,true);
+ document.addEventListener('keydown',handleShortcut,true);window.addEventListener('keydown',handleShortcut,true);document.addEventListener('keyup',handleShortcut,true);
  bindFrameKeys();
  new MutationObserver(bindFrameKeys).observe(document.documentElement,{childList:true,subtree:true});
  console.info('[Zeus] Central Interact v1.1 carregada');
