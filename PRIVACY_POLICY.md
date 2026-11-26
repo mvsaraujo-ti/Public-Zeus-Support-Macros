@@ -1,6 +1,6 @@
 # Privacy Policy – Zeus Support Macros
 
-Last updated: 27 February 2026
+Last updated: 26 November 2026
 
 Zeus Support Macros is a browser extension developed to improve productivity within the Interact TJMA system.
 
@@ -17,7 +17,7 @@ The extension does not gather:
 
 ## 2. Local Data Storage
 
-All macros created by users are stored locally on the user's device using the official browser Extension Storage API.
+Macros, Mini Wiki articles and settings are stored locally in the browser (localStorage of the Interact page). When the user clicks "Abrir no GLPI e preencher", a draft of the ticket (title, description, phone, registration number) is placed in the extension's local storage (chrome.storage.local) only so the GLPI form page can read it; it expires after 30 minutes and is deleted as soon as the form is filled.
 
 This data:
 - Remains exclusively on the user's device
@@ -27,9 +27,10 @@ This data:
 
 ## 3. Permissions
 
-The extension operates exclusively on the following domain:
+The extension operates exclusively on the following domains:
 
-https://interact.tjma.jus.br/*
+https://interact.tjma.jus.br/* (reading the open chat to build the summary, inserting text into the message box)
+https://atendimento.tjma.jus.br/Form/Render/* (only to fill the ticket form fields when the user asks; it never submits the form)
 
 It does not access or interact with other websites.
 

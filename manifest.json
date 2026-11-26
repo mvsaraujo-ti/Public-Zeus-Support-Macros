@@ -1,16 +1,14 @@
 {
   "manifest_version": 3,
   "name": "Zeus Support Macros",
-  "description": "Internal productivity extension for managing and inserting standardized support macros in Interact TJMA.",
-  "version": "1.1.1",
-
+  "description": "Macros, Mini Wiki, resumo local da conversa, rascunho de chamado no GLPI e tema escuro para o Interact TJMA.",
+  "version": "1.9.4",
   "icons": {
     "16": "assets/icon-16.png",
     "32": "assets/icon-32.png",
     "48": "assets/icon-48.png",
     "128": "assets/icon-128.png"
   },
-
   "action": {
     "default_icon": {
       "16": "assets/icon-16.png",
@@ -19,23 +17,30 @@
     },
     "default_title": "Zeus Support Macros"
   },
-
   "content_scripts": [
     {
       "matches": [
-        "https://interact.tjma.jus.br/*"
+        "https://interact.tjma.jus.br/interact_multiagent/*"
       ],
       "js": [
-        "inject.js"
+        "interact/zeus-interact.js"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://atendimento.tjma.jus.br/Form/Render/*"
+      ],
+      "js": [
+        "glpi/zeus-glpi.js"
       ],
       "run_at": "document_idle"
     }
   ],
-
   "host_permissions": [
-    "https://interact.tjma.jus.br/*"
+    "https://interact.tjma.jus.br/*",
+    "https://atendimento.tjma.jus.br/*"
   ],
-
   "web_accessible_resources": [
     {
       "resources": [
@@ -47,11 +52,24 @@
       ]
     }
   ],
-
   "browser_specific_settings": {
     "gecko": {
       "id": "zeus-support-macros@tjma.jus.br",
       "strict_min_version": "109.0"
     }
-  }
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "commands": {
+    "toggle-zeus": {
+      "suggested_key": {
+        "default": "Alt+Z"
+      },
+      "description": "Abrir/fechar o Zeus Central"
+    }
+  },
+  "permissions": [
+    "storage"
+  ]
 }
