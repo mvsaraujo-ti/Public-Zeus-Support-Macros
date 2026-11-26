@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Zeus Support Macros",
   "description": "Macros, Mini Wiki, resumo local da conversa, rascunho de chamado no GLPI e tema escuro para o Interact TJMA.",
-  "version": "1.9.4",
+  "version": "1.9.5",
   "icons": {
     "16": "assets/icon-16.png",
     "32": "assets/icon-32.png",
